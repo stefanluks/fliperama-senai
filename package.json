@@ -1,0 +1,18 @@
+{
+  "name": "flip-system",
+  "version": "1.0.0",
+  "description": "fliperama de jogos do alunos do senai cfp taquaralto.",
+  "main": "index.js",
+  "scripts": {
+    "start": "electron .",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Stefan Lucas",
+  "license": "ISC",
+  "dependencies": {
+    "electron": "^39.2.6",
+    "fs": "^0.0.1-security",
+    "path": "^0.12.7",
+    "serialport": "^13.0.0"
+  }
+}

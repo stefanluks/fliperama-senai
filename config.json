@@ -1,0 +1,20 @@
+{
+    "nome":"SENAI BOX",
+    "ranking":"",
+    "jogos":[
+        {
+            "codigo":"g1-qs",
+            "nome":"Quick Solutions",
+            "descricao":"breve descrição do jogo",
+            "autor":"Gabriel Nunes",
+            "capa":"Quick Solutions.png"
+        },
+        {
+            "codigo":"g2-cm",
+            "nome":"Culinária Maluca",
+            "descricao":"breve descrição do jogo",
+            "autor":"Luiz Felipe",
+            "capa":"Culinária Maluca.png"
+        }
+    ]
+}

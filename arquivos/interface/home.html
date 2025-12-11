@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>FLIP SYSTEM</title>
+    <style>
+        .loading {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            border: 5px solid transparent;
+            border-top: 5px solid white;
+            animation: loop 1s infinite;
+        }
+
+        @keyframes loop {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        #img-bg {
+            z-index: -99;
+            position: fixed;
+            width: 100%;
+            height: 100%;
+        }
+
+        .card.selecionado {
+            border: 10px solid green !important;
+        }
+    </style>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
+</head>
+
+<body class="bg bg-secondary">
+    <img id="img-bg" src="../imagens/bg.png" alt="">
+    <!-- <div class="my-4 w-100 py-5"></div> -->
+    <div id="app" class="w-100 d-flex flex-wrap align-items-center justify-content-center">
+        <!-- APP -->
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI"
+        crossorigin="anonymous"></script>
+    <script>
+        window.onload = () => {
+            let max = 0;
+            let atual = 0;
+            let tela = "menu";
+            let cards = null;
+            let max_linha = 0;
+            let teclas = {
+                ArrowUp: () => {
+                    if (tela == "menu") {
+                        if (atual > max_linha - 1) atual -= max_linha;
+                        Atualizar();
+                    }
+                },
+                ArrowDown: () => {
+                    if (tela == "menu") {
+                        if (atual < max - max_linha) atual += max_linha;
+                        Atualizar();
+                    }
+                },
+                ArrowLeft: () => {
+                    if (tela == "menu") {
+                        if (atual > 0) atual--;
+                        else atual = max - 1;
+                        Atualizar();
+                    }
+                },
+                ArrowRight: () => {
+                    if (tela == "menu") {
+                        if (atual < max - 1) atual++;
+                        else atual = 0;
+                        Atualizar();
+                    }
+                },
+            }
+            window.api.onConfigLoaded((config, index) => {
+                const app = document.getElementById("app");
+                max = config.jogos.length;
+                app.innerHTML = `
+                <div class="w-100 text-center">
+                    <img src="../imagens/logo2.png" width="100px">
+                </div>`;
+                config.jogos.forEach(jogo => {
+                    let card = `
+                    <div class="card ${index == 0 ? "selecionado" : "_"} m-2 text-bg-dark" style="width: 250px; height: 250px;">
+                        <img src="../imagens/${jogo.capa}" class="card-img" alt="...">
+                        <div class="card-img-overlay d-flex align-items-start flex-column-reverse justify-content-between">
+                            <h5 class="w-100 rounded text-start px-2 card-text bg bg-light text-dark">${jogo.nome}</h5>
+                            <p class="w-100 rounded text-start px-2 card-text bg bg-light text-dark"><small>Criador: ${jogo.autor}</small></p>
+                        </div>
+                    </div>`
+                    app.innerHTML += card;
+                });
+                Atualizar();
+                max_linha = Math.floor(window.innerWidth / 255);
+            });
+
+            window.addEventListener("resize", () => {
+                max_linha = Math.floor(window.innerWidth / 255);
+                console.log(max_linha);
+            })
+
+            window.addEventListener("keydown", tecla => {
+                let tecla_selecionada = teclas[tecla.key];
+                if (tecla_selecionada) tecla_selecionada();
+            })
+
+            function Atualizar() {
+                console.log(atual);
+                let cards = document.querySelectorAll(".card");
+                cards.forEach(c => { c.classList.remove("selecionado"); });
+                cards[atual].classList.add("selecionado");
+            }
+        }
+
+    </script>
+</body>
+
+</html>
