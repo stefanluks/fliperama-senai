@@ -3,6 +3,12 @@
     "ranking":"",
     "jogos":[
         {
+            "codigo":"g3-cdv",
+            "nome":"Cobra Da Verdade",
+            "descricao":"breve descrição do jogo",
+            "autor":"Stefan Lucas",
+            "capa":"Cobra da Verdade.png"
+        },{
             "codigo":"g1-qs",
             "nome":"Quick Solutions",
             "descricao":"breve descrição do jogo",
