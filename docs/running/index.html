@@ -1,0 +1,575 @@
+<!doctype html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Corrida — RUNNING</title>
+    <style>
+        :root {
+            --bg1: #235e8e;
+            --bg2: #5e3a8d;
+            --accent: #ff6b6b;
+            --ground: #433c41;
+        }
+
+        html,
+        body {
+            height: 100%;
+            margin: 0;
+            font-family: Inter, system-ui, Segoe UI, Roboto, Arial;
+            color: #e6eef8
+        }
+
+        body {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(180deg, var(--bg1), #385da6 40%, var(--bg2));
+        }
+
+        #gameWrap {
+            width: min(1400px, 96vw);
+            height: min(2000px, 70vh);
+            position: relative;
+            box-shadow: 0 12px 40px rgba(2, 6, 23, .6);
+            border-radius: 12px;
+            overflow: hidden;
+            background: linear-gradient(180deg, rgba(29, 155, 166, 0.02), rgba(255, 255, 255, 0));
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+
+        .ui {
+            position: absolute;
+            left: 14px;
+            top: 12px;
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            font-weight: 60;
+            letter-spacing: .4px
+        }
+
+        .lives {
+            display: flex;
+            gap: 6px;
+            font-size: 20px
+        }
+
+        .heart {
+            width: 30px;
+            height: 30px;
+            display: inline-grid;
+            place-items: center;
+            background: linear-gradient(90deg, #ff4d6d, #ff9aa2);
+            border-radius: 6px;
+            box-shadow: 0 6px 14px rgba(211, 13, 49, 0.18);
+            color: white
+        }
+
+        .score {
+            background: rgba(255, 255, 255, .04);
+            padding: 6px 10px;
+            border-radius: 8px;
+            font-size: 14px
+        }
+
+        .help {
+            position: absolute;
+            right: 12px;
+            top: 12px;
+            font-size: 13px;
+            background: rgba(233, 223, 223, 0.03);
+            padding: 6px 10px;
+            border-radius: 8px
+        }
+
+        .overlay {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            gap: 10px;
+            background: linear-gradient(rgba(15, 83, 109, 0.45), rgba(125, 217, 245, 0.6));
+            backdrop-filter: blur(3px);
+            color: #fff;
+            text-align: center;
+            padding: 20px
+        }
+
+        .btn {
+            background: linear-gradient(90deg, #6ee7b7, #10b981);
+            color: #022;
+            padding: 10px 18px;
+            border-radius: 8px;
+            border: none;
+            font-weight: 700;
+            cursor: pointer
+        }
+
+        .small {
+            font-size: 14px;
+            opacity: .85
+        }
+
+        #btn-back {
+            position: absolute;
+            top: calc(50% - 280px);
+            left: 65px;
+            padding: 5px 10px;
+            background-color: red;
+            color: white;
+            width: max-content;
+            border-radius: 10px;
+            cursor: pointer;
+            z-index: 9999;
+        }
+
+        footer {
+            position: absolute;
+            left: 14px;
+            bottom: 12px;
+            font-size: 12px;
+            color: rgba(230, 238, 248, .7)
+        }
+
+        @media (max-width:480px) {
+            .heart {
+                width: 26px;
+                height: 26px;
+                font-size: 14px
+            }
+
+            .score {
+                font-size: 12px
+            }
+
+            .help {
+                display: none
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div id="btn-back">VOLTAR</div>
+    <div id="gameWrap" aria-label="Jogo Corrida">
+        <canvas id="c"></canvas>
+
+        <div class="ui">
+            <div class="lives" id="livesUI" aria-hidden="false"></div>
+            <div class="score" id="scoreUI">Pontuação: 0</div>
+        </div>
+
+        <div class="help">Pular: Espaço / Clique / Toque • Recomeçar: R</div>
+        <footer class="small">Potion Run — recupere vidas com porções. Evite obstáculos!</footer>
+
+        <div id="overlay" class="overlay" style="display:none">
+            <h2 id="overlayTitle">Game Over</h2>
+            <div id="overlayScore" class="small"></div>
+            <button id="restart" class="btn">Recomeçar</button>
+            <div class="small">Pressione R para reiniciar</div>
+        </div>
+    </div>
+
+    <script>
+        var btnVoltar = document.getElementById("btn-back");
+
+        btnVoltar.addEventListener("click", () => {
+            window.location.href = "../"
+        });
+        /*
+            Potion Run — um jogo simples:
+            - Personagem corre automaticamente
+            - Pula com espaço / clique
+            - Obstáculos tiram 1 vida (3 vidas no total)
+            - Porções (potions) recuperam 1 vida até o máximo de 3
+            - Placar aumenta com a distância
+        */
+
+        const canvas = document.getElementById('c');
+        const ctx = canvas.getContext('2d', { alpha: false });
+        let DPR = window.devicePixelRatio || 1;
+
+        function resize() {
+            const rect = canvas.getBoundingClientRect();
+            canvas.width = Math.floor(rect.width * DPR);
+            canvas.height = Math.floor(rect.height * DPR);
+            ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+        }
+        window.addEventListener('resize', resize);
+
+        const W = () => canvas.width / DPR;
+        const H = () => canvas.height / DPR;
+
+        const gameWrap = document.getElementById('gameWrap');
+        const livesUI = document.getElementById('livesUI');
+        const scoreUI = document.getElementById('scoreUI');
+        const overlay = document.getElementById('overlay');
+        const overlayTitle = document.getElementById('overlayTitle');
+        const overlayScore = document.getElementById('overlayScore');
+        const restartBtn = document.getElementById('restart');
+
+        resize();
+
+        // -- Estado do jogo
+        let running = true;
+        let last = 0;
+        let score = 0;
+        let speed = 280; // px/s ground speed
+        let spawnTimer = 0;
+        let potionTimer = 0;
+        let obstacles = [];
+        let potions = [];
+        const groundY = () => H() - (H() * 0.16);
+        const GRAV = 1400;
+
+        // Jogador
+        const player = {
+            x: 90,
+            y: 0,
+            w: 48,
+            h: 56,
+            vy: 0,
+            onGround: false,
+            invincible: 0,
+            lives: 3
+        };
+
+        function startGame() {
+            obstacles = [];
+            potions = [];
+            score = 0;
+            speed = 280;
+            player.y = groundY() - player.h;
+            player.vy = 0;
+            player.invincible = 0;
+            player.lives = 3;
+            running = true;
+            overlay.style.display = 'none';
+            last = performance.now();
+            spawnTimer = 0;
+            potionTimer = 0;
+            requestAnimationFrame(loop);
+            updateUI();
+        }
+
+        function gameOver() {
+            running = false;
+            overlay.style.display = 'flex';
+            overlayTitle.textContent = 'Game Over';
+            overlayScore.textContent = `Pontuação: ${Math.floor(score)}`;
+        }
+
+        // UI
+        function updateUI() {
+            livesUI.innerHTML = '';
+            for (let i = 0; i < 3; i++) {
+                const div = document.createElement('div');
+                div.className = 'heart';
+                div.textContent = i < player.lives ? '❤' : '♡';
+                if (i >= player.lives) div.style.background = 'linear-gradient(90deg,#334155,#0f1724)';
+                livesUI.appendChild(div);
+            }
+            scoreUI.textContent = `Pontuação: ${Math.floor(score)}`;
+        }
+
+        // Entrada
+        function jump() {
+            if (!running) return;
+            if (player.onGround) {
+                player.vy = -560;
+                player.onGround = false;
+            }
+        }
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'Space') { e.preventDefault(); jump(); }
+            if (e.key.toLowerCase() === 'r') { startGame(); }
+        });
+        canvas.addEventListener('mousedown', jump);
+        canvas.addEventListener('touchstart', (e) => { e.preventDefault(); jump(); }, { passive: false });
+
+        // Cria obstáculos e poções
+        function spawnObstacle() {
+            const h = 28 + Math.random() * 54;
+            const w = 22 + Math.random() * 36;
+            obstacles.push({ x: W() + 40, y: groundY() - h, w, h, hit: false });
+        }
+        function spawnPotion() {
+            const size = 28;
+            const y = groundY() - player.h - 40 - Math.random() * 40;
+            potions.push({ x: W() + 40, y, s: size, picked: false });
+        }
+
+        // Colisão reta (AABB)
+        function collideRect(a, b) {
+            return !(a.x + a.w < b.x || a.x > b.x + b.w || a.y + a.h < b.y || a.y > b.y + b.h);
+        }
+
+        // Game loop
+        function loop(t) {
+            const dt = Math.min(0.05, (t - last) / 1000);
+            last = t;
+            if (running) update(dt);
+            draw();
+            if (running) requestAnimationFrame(loop);
+        }
+
+        function update(dt) {
+            // velocidade sobe levemente com tempo
+            speed += dt * 4;
+
+            // física personagem
+            player.vy += GRAV * dt;
+            player.y += player.vy * dt;
+            if (player.y + player.h >= groundY()) {
+                player.y = groundY() - player.h;
+                player.vy = 0;
+                player.onGround = true;
+            } else player.onGround = false;
+
+            // spawn timers
+            spawnTimer -= dt;
+            if (spawnTimer <= 0) {
+                spawnObstacle();
+                spawnTimer = 0.9 + Math.random() * 1.1 - Math.min(0.6, score / 200); // fica mais frequente
+            }
+            potionTimer -= dt;
+            if (potionTimer <= 0) {
+                spawnPotion();
+                potionTimer = 4 + Math.random() * 6;
+            }
+
+            // mover objetos
+            for (let o of obstacles) {
+                o.x -= speed * dt;
+            }
+            for (let p of potions) {
+                p.x -= speed * dt;
+            }
+
+            // remover offscreen
+            obstacles = obstacles.filter(o => o.x + o.w > -20);
+            potions = potions.filter(p => p.x + p.s > -20 && !p.picked);
+
+            // colisões
+            const pBox = { x: player.x, y: player.y, w: player.w, h: player.h };
+            for (let o of obstacles) {
+                const oBox = { x: o.x, y: o.y, w: o.w, h: o.h };
+                if (collideRect(pBox, oBox) && !o.hit && player.invincible <= 0) {
+                    o.hit = true;
+                    player.lives -= 1;
+                    player.invincible = 1.1; // invencibilidade temporária
+                    // pequeno recuo visual
+                    player.vy = -220;
+                    if (player.lives <= 0) {
+                        gameOver();
+                    }
+                    updateUI();
+                }
+            }
+
+            for (let pot of potions) {
+                const box = { x: pot.x, y: pot.y, w: pot.s, h: pot.s };
+                if (!pot.picked && collideRect(pBox, box)) {
+                    pot.picked = true;
+                    if (player.lives < 3) {
+                        player.lives++;
+                        updateUI();
+                    }
+                }
+            }
+
+            // invincibility countdown
+            if (player.invincible > 0) player.invincible = Math.max(0, player.invincible - dt);
+
+            // score
+            score += speed * dt * 0.02;
+            updateUI();
+        }
+
+        // Desenho
+        function draw() {
+            const w = W(), h = H();
+            // background gradient + subtle stars
+            const g = ctx.createLinearGradient(0, 0, 0, h);
+            g.addColorStop(0, '#1E90FF');
+            g.addColorStop(0.4, '#00BFFF');
+            g.addColorStop(1, '#87CEFA');
+            ctx.fillStyle = g;
+            ctx.fillRect(0, 0, w, h);
+
+            // distant mountains (parallax)
+            drawMountains(w, h);
+
+            // ground
+            const gy = groundY();
+            drawGround(0, gy, w, h);
+
+            // potions
+            for (const pot of potions) {
+                if (pot.picked) continue;
+                drawPotion(pot.x, pot.y, pot.s);
+            }
+
+            // obstáculos
+            for (const o of obstacles) {
+                drawObstacle(o.x, o.y, o.w, o.h, o.hit);
+            }
+
+            // player (simple sprite with face)
+            ctx.save();
+            const px = player.x, py = player.y;
+            // blink if invincible
+            const alpha = player.invincible > 0 ? (Math.floor(performance.now() / 80) % 2 ? 0.45 : 1) : 1;
+            ctx.globalAlpha = alpha;
+            // body
+            roundRect(ctx, px, py, player.w, player.h, 10);
+            ctx.fillStyle = '##40E0D0	';
+            ctx.fill();
+            // shadow
+            ctx.fillStyle = 'rgba(0,0,0,0.12)';
+            ctx.beginPath();
+            ctx.ellipse(px + player.w / 2, py + player.h + 8, player.w * 0.55, 9, 0, 0, Math.PI * 2);
+            ctx.fill();
+            // face
+            ctx.fillStyle = '#808080';
+            ctx.fillRect(px + 10, py + 22, 8, 6);
+            ctx.fillRect(px + 30, py + 22, 8, 6);
+            ctx.restore();
+
+            // HUD (score already drawn by DOM, but draw small progress bar)
+            // little speed bar
+            const barW = 160;
+            ctx.fillStyle = 'rgba(255,255,255,0.04)';
+            roundRect(ctx, w - barW - 16, 16, barW, 10, 6);
+            ctx.fill();
+            ctx.fillStyle = '#4ade80';
+            const pct = Math.min(1, (speed - 200) / 300);
+            roundRect(ctx, w - barW - 16, 16, barW * pct, 10, 6);
+            ctx.fill();
+
+            // overlay if paused or gameover handled by DOM
+        }
+
+        // helpers draw functions
+        function drawMountains(w, h) {
+            // layered mountains
+            ctx.save();
+            const gy = groundY();
+            // far
+            ctx.fillStyle = '#D2B48C';
+            ctx.beginPath();
+            ctx.moveTo(0, gy);
+            ctx.lineTo(w * 0.12, gy - 120);
+            ctx.lineTo(w * 0.28, gy - 60);
+            ctx.lineTo(w * 0.42, gy - 160);
+            ctx.lineTo(w * 0.6, gy - 80);
+            ctx.lineTo(w * 0.78, gy - 160);
+            ctx.lineTo(w, gy - 48);
+            ctx.lineTo(w, gy);
+            ctx.closePath();
+            ctx.fill();
+            // mid
+            ctx.fillStyle = '#DEB887';
+            ctx.beginPath();
+            ctx.moveTo(0, gy);
+            ctx.lineTo(w * 0.06, gy - 80);
+            ctx.lineTo(w * 0.22, gy - 40);
+            ctx.lineTo(w * 0.38, gy - 120);
+            ctx.lineTo(w * 0.54, gy - 60);
+            ctx.lineTo(w * 0.72, gy - 120);
+            ctx.lineTo(w, gy - 32);
+            ctx.lineTo(w, gy);
+            ctx.closePath();
+            ctx.fill();
+            ctx.restore();
+        }
+
+        function drawGround(x, y, w, h) {
+            // ground fill
+            ctx.fillStyle = '#CD853F';
+            ctx.fillRect(0, y, w, h - y);
+            // decorative stripes
+            ctx.fillStyle = 'rgba(255,255,255,0.02)';
+            for (let i = 0; i < 20; i++) {
+                ctx.fillRect((i * 40 + (performance.now() / 40 % 40)) % (w + 60) - 30, y + 8, 24, 3);
+            }
+        }
+
+        function drawObstacle(x, y, w, h, hit) {
+            ctx.save();
+            ctx.translate(x, y);
+            ctx.fillStyle = hit ? '#FA8072' : '#1E90FF';
+            roundRect(ctx, 0, 0, w, h, 6);
+            ctx.fill();
+            // ornamental spikes
+            ctx.fillStyle = 'rgba(0,0,0,0.12)';
+            ctx.beginPath();
+            ctx.moveTo(0, 0);
+            ctx.lineTo(w / 2, -10);
+            ctx.lineTo(w, 0);
+            ctx.fill();
+            ctx.restore();
+        }
+
+        function drawPotion(x, y, s) {
+            ctx.save();
+            ctx.translate(x, y);
+            // bottle shadow
+            ctx.fillStyle = 'rgba(0,0,0,0.14)';
+            ctx.beginPath();
+            ctx.ellipse(s / 2, s + 6, s / 2.6, 6, 0, 0, Math.PI * 2);
+            ctx.fill();
+            // bottle body
+            roundRect(ctx, 0, 0, s, s, 8);
+            ctx.fillStyle = 'linear-gradient';
+            ctx.fill();
+            // glass effect
+            ctx.fillStyle = '#00FA9A';
+            ctx.globalAlpha = 0.85;
+            roundRect(ctx, 4, 4, s - 8, s - 8, 6);
+            ctx.fill();
+            // cap
+            ctx.globalAlpha = 1;
+            ctx.fillStyle = '#F0E68C';
+            roundRect(ctx, s / 2 - 8, -8, 16, 10, 4);
+            ctx.fill();
+            // + sign
+            ctx.fillStyle = '#DC143C';
+            ctx.font = 'bold 16px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('+', s / 2, s / 2);
+            ctx.restore();
+        }
+
+        // round rect helper
+        function roundRect(ctx, x, y, w, h, r) {
+            if (w < 2 * r) r = w / 2;
+            if (h < 2 * r) r = h / 2;
+            ctx.beginPath();
+            ctx.moveTo(x + r, y);
+            ctx.arcTo(x + w, y, x + w, y + h, r);
+            ctx.arcTo(x + w, y + h, x, y + h, r);
+            ctx.arcTo(x, y + h, x, y, r);
+            ctx.arcTo(x, y, x + w, y, r);
+            ctx.closePath();
+        }
+
+        // restart button
+        restartBtn.addEventListener('click', startGame);
+
+        // start initially
+        startGame();
+    </script>
+</body>
+
+</html>

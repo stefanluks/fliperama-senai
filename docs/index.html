@@ -1,26 +1,58 @@
 <!doctype html>
-<html lang="en">
+<html lang="pt-br">
 
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Fliperama Senai</title>
+    <style>
+        .card{
+            height: 480px !important;
+        }
+        .card-body{
+            display: flex !important;
+            align-items: center !important;
+            flex-direction: column !important;
+            justify-content: space-between !important;
+        }
+        .tema{
+            background-image: linear-gradient(to left, #2447ff, #e5471f);
+            color: white !important;
+            font-weight: bold;
+        }
+    </style>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet"
         integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
 </head>
 
-<body>
-    <div class="container-fluid py-3 text-center text-light bg bg-dark">
+<body class="bg bg-dark">
+    <div class="container-fluid py-3 text-center text-light bg tema">
         <h1>Demonstração dos jogos dos alunos</h1>
         <p>Portal para publicação dos jogos criados pelos alunos do CFP de Taquaralto.</p>
     </div>
     <div id="jogos" class="container d-flex align-items-center justify-content-center flex-wrap">
-        <div class="card" style="width: 18rem;">
-            <img src="../arquivos/imagens/Culinária Maluca.png" class="card-img-top" alt="...">
+        <div class="card m-2" style="width: 18rem;">
+            <img src="./culinariamaluca//Culinária Maluca.png" class="card-img-top" alt="...">
             <div class="card-body">
                 <h5 class="card-title">Culinária Maluca</h5>
                 <p class="card-text">Minigame ilustrativo da area de alimentação. <b>Autor: </b> Luiz Felipe</p>
-                <a href="./culinariamaluca/index.html" class="btn btn-primary">Jogar</a>
+                <a href="./culinariamaluca/index.html" class="w-100 btn tema">Jogar</a>
+            </div>
+        </div>
+        <div class="card m-2" style="width: 18rem;">
+            <img src="./cobraverdade/Cobra da Verdade.png" class="card-img-top" alt="...">
+            <div class="card-body">
+                <h5 class="card-title">Cobra da Verdade</h5>
+                <p class="card-text">Cobrinha + Álgebra Booleana de forma divertida. <b>Autor: </b> Stefan Lucas</p>
+                <a href="./cobraverdade/index.html" class="w-100 btn tema">Jogar</a>
+            </div>
+        </div>
+        <div class="card m-2" style="width: 18rem;">
+            <img src="./running/Running.png" class="card-img-top" alt="...">
+            <div class="card-body">
+                <h5 class="card-title">Running</h5>
+                <p class="card-text">Infinite Runner inspirado no Dino do google. <b>Autor: </b> Julia Feitosa</p>
+                <a href="./running/index.html" class="w-100 btn tema">Jogar</a>
             </div>
         </div>
     </div>
